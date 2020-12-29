@@ -1,0 +1,152 @@
+type couleur = Blanc | Noir;;
+let x = 2;;
+type quadtree = Feuille of couleur
+              |Noeud of quadtree * quadtree * quadtree * quadtree;;
+let x = Feuille Noir ;;
+let y = Feuille Blanc ;;
+let fb = Feuille Blanc;;
+let fn = Feuille Noir;;
+let n1 = Noeud ( fn,fb,fb,fb );;
+let n2 = Noeud (fn,fb,fn,fb);;
+let i = Noeud ( n1,n1,n1,n1);;
+let j = Noeud (fb,n2,n2,n1);;
+
+
+(*exercice1*)
+
+
+
+let quadtree_full = fun q ->
+                     let rec full = fun (f , p ) ->
+                       if p=0 then f else
+                         full (Noeud(f , f , f , f ),p/2)
+                     in full (Feuille Noir , q-1);;
+
+quadtree_full 3 ;;
+
+
+
+
+(*exercice2*)
+
+
+let rec inverse i = match i with
+  | Feuille Blanc -> Feuille Noir
+  | Feuille Noir -> Feuille Blanc
+  | Noeud (a1,a2,a3,a4) ->
+     Noeud (inverse a1, inverse a2 , inverse a3 , inverse a4);;
+inverse n1;;
+
+(*exercice3*)
+
+let rec rotate i = match i with (*la fonction rotate effectue une rotation vers la gauche de l'image *)
+    
+  |Feuille _ -> i (*que ca soit une feuille blanche ou noire ca retourne l'argument i qui est forcement une feuille*)
+   |Noeud(a1,a2,a3,a4) ->
+     Noeud(rotate a2 , rotate a3 , rotate a4 , rotate a1);; (*si c'est un noeud on applique rotate sur tous les elements qui appartient au noeud *) 
+
+
+rotate n2;;
+
+
+
+(*exercice 4 *)
+
+let rec union = fun a b -> (*la fonction union renvoie l'union des images passes en argument*)
+
+  match (a,b) with
+    (Feuille Blanc , k) |(k,Feuille Blanc) -> k (*une feuille blanche avec n'importe quoi que je l'ai attribué la lettre k ;  ca retourne k*) 
+    |(Feuille Noir , l ) | (l , Feuille Noir ) -> Feuille Noir  (*une feuille noire avec n'importe quoi que je l'ai attribué la lettre l ;  ca retourne la feuille noire*)
+    |(Noeud(u1,u2,u3,u4) , Noeud(u5,u6,u7,u8))->
+      Noeud ((union u1 u5),(union u2 u6),(union u3 u7),(union u4 u8));;(*quand c'est un union entre deux noeuds , on applique union sur chaque deux elements des deux noeuds qui ont la meme position*)
+
+union n2 n1 ;;
+
+
+(*exercice 5 *)
+
+
+
+let rec intersection = fun c d -> (*la fonction intersection renvoie l'intersection des deux images passes en parametres *)
+
+  match (c,d) with
+    (Feuille Blanc , y) |(y,Feuille Blanc) -> Feuille Blanc (*une feuille blanche avec n'importe quoi que je l'ai attribué la lettre y ;  ca retourne une feuille blanche*) 
+    |(Feuille Noir , x ) | (x, Feuille Noir ) -> Feuille Noir (*une feuille noire avec  x qui est forcement une feuille noire car le cas ou il est blanche est deja traité au dessus ;  ca retourne la feuille noire*) 
+    |(Noeud(i1,i2,i3,i4) , Noeud(i5,i6,i7,i8))->
+      Noeud ((intersection i1 i5),(intersection i2 i6),(intersection i3 i7),(intersection i4 i8));; (*quand c'est une intersection entre deux noeuds , on applique intersection sur chaque deux elements des deux noeuds qui ont la meme position*)
+
+intersection n2 y ;;
+
+
+
+
+(*exercice8 *)
+   
+let rec optimise = function (*la fontion optimise c'est une fontion qui optimise la representation arborescence d'un quadtree ; chaque noeud qui contient des fils des meme couleurs ca se transforme en une feuille donc la couleur de ceette feuille est la couleur des fils du noeud*)
+  |Feuille a -> Feuille a (*si le quadtree passé en parametre est juste une feuille , ca retourne une feuille "rien à optimiser"*)
+  |Noeud(a, b, c, d) -> 
+    match (a,b,c,d) with
+    |(Feuille e, Feuille f, Feuille j, Feuille h ) -> (*verifier si les feuilles ont la meme couleur , si oui on retourne une de ces feuilles peu importe ,sinon on retourne le noeud passé en parametre*)
+      if (e=f) = (j=h)
+      then Feuille e
+      else Noeud(a,b,c,d)
+    |(a,b,c,d) -> let na = optimise a in
+                  let nb = optimise b in
+                  let nc = optimise c in
+                  let nd = optimise d in
+                  if na=nb && nb=nc && nc=nd then na
+                  else Noeud (na,nb,nc,nd);;(*c'est une condition pour verifier si dans un quadtree il y a plusieurs noeuds qui contiennent  des fils du meme couleurs par exemple un quadtree_full qu'on a traité dans la premiere question*)
+
+
+let a = Noeud(Feuille Noir, Feuille Blanc,Feuille Noir,Feuille Noir);;
+
+
+optimise a;;
+
+let noirrre = quadtree_full 3 ;;
+
+optimise noirrre ;; 
+
+
+
+
+
+   
+(*exercice 9*)
+
+type bit = Zero | Un;;
+
+
+let rec quadtree_list a = match a with
+| Feuille Noir -> [Zero ; Un] 
+| Feuille Blanc  -> [Zero; Zero]
+| Noeud (j1,j2,j3,j4) -> (*alors dans une liste qui debute avec Un , on ajoute ensuite le premier fils du noeud sous forme de zero et un , et concatene avec le deuxieme , le troisieme et le quatrieme fils , alors que chaque fils se represente dans une liste des bits , 00 pour les feuilles blanches et 01 pour les feuilles noires , et comme ca jusqu'a l'obtension d'une liste des bits a partir d'un quadtree*)
+    Un::quadtree_list j1 @
+    quadtree_list j2 @
+    quadtree_list j3 @
+    quadtree_list j4
+;;
+
+quadtree_list i ;; 
+ 
+(*exercice 10*)
+
+let rec do_parse l = match l with
+| Zero::Zero::rem -> Feuille Blanc, rem
+| Zero::Un::rem -> Feuille Noir, rem
+| Un::rem ->
+    let a1,rem = do_parse rem in
+    let a2,rem = do_parse rem in
+    let a3,rem = do_parse rem in
+    let a4,rem = do_parse rem in
+    Noeud (a1,a2,a3,a4),rem
+| _ -> assert false
+;;
+
+do_parse [Un; Un; Zero; Un; Zero; Un; Zero; Un; Zero; Un; Un; Zero; Un; Zero; Un;
+ Zero; Un; Zero; Un; Un; Zero; Un; Zero; Un; Zero; Un; Zero; Un; Un; Zero;
+ Un; Zero; Un; Zero; Un; Zero; Un] ;;
+
+
+let list_quadtree l = let a,_ = do_parse l in a
+;;
